@@ -1,0 +1,429 @@
+---
+title: "Murders"
+author: "Diana"
+date: "16/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+------------------
+
+# Iniciando con tidyverse
+
+ En este capítulo aprenderemos a trabajar directamente con data frames, que facilitan enormemente la organización de información. Podemos cargar todos los paquetes del tidyverse a la vez al instalar y cargar el paquete tidyverse:
+
+```{r}
+library(tidyverse)
+```
+
+En este capítulo presentamos algunos de los aspectos más utilizadas del tidyverse, comenzando con el paquete dplyr para manipular los data frames y el paquete purrr para trabajar con las funciones. Tengan en cuenta que el tidyverse también incluye un paquete para graficar, ggplot2
+
+## Tidy
+
+Decimos que una tabla de datos está en formato tidy si cada fila representa una observación y las columnas representan las diferentes variables disponibles para cada una de estas observaciones.
+
+## dplyr
+
+El paquete dplyr del tidyverse ofrece funciones que realizan algunas de las operaciones más comunes cuando se trabaja con data frames y usa nombres para estas funciones que son relativamente fáciles de recordar. Por ejemplo, para cambiar la tabla de datos agregando una nueva columna, utilizamos mutate. Para filtrar la tabla de datos a un subconjunto de filas, utilizamos filter. Finalmente, para subdividir los datos seleccionando columnas específicas, usamos select
+
+```{r}
+library(dplyr)
+```
+
+
+\texbf{mutate}
+
+```{r}
+library(dslabs)
+data("murders")
+murders <- mutate(murders, rate = total/ population * 100000)
+```
+
+```{r}
+head(murders)
+```
+Cómo crear subconjuntos con filter
+Ahora supongan que queremos filtrar la tabla de datos para mostrar solo las entradas para las cuales la tasa de asesinatos es inferior a 0.71
+
+
+```{r}
+filter(murders, rate <= 0.71)
+```
+
+
+Si queremos ver solo algunas columnas, podemos usar la función select. En el siguiente código, seleccionamos tres columnas, asignamos el resultado a un nuevo objeto y luego filtramos este nuevo objeto:
+
+```{r}
+new_table <- select(murders, state, region, rate)
+filter(new_table, rate <= 0.71)
+
+```
+
+
+```{r}
+new_table
+```
+## pipe
+
+En dplyr, podemos escribir código que se parece más a una descripción de lo que queremos hacer sin objetos intermedios:
+
+original data 
+→
+ select 
+→
+ filter 
+ 
+
+Para tal operación, podemos usar el pipe %>%. El código se ve así:
+
+```{r}
+murders %>% select(state, region, rate) %>% filter(rate <= 0.71)
+
+```
+
+Podemos continuar canalizando (piping en inglés) valores 
+
+## Ejercicios 
+```{r}
+murders <- mutate(murders, rate = total/ population * 100000,
+                  rank = rank(-rate))
+names(murders)
+
+```
+## ¿Cómo resumir datos?
+
+Dentro del análisis exploratorio: promedio y desviación estandar. 
+Función summarize:
+
+Carga de datos del set height:
+
+```{r}
+library(dplyr)
+library(dslabs)
+data(heights)
+```
+
+El siguiente código calcula el promedio y la desviación estándar para las hembras:
+
+```{r}
+names(heights)
+head(heights)
+```
+
+```{r}
+s <- heights %>%
+  filter(sex == "Female") %>%
+  summarize(average = mean(height), standard_deviation = sd(height))
+s
+```
+
+
+
+```{r}
+mujeres <- filter(heights, sex =="Female")
+mujeres
+mean(mujeres$height)
+sd(mujeres$height)
+summarise(mujeres)
+```
+
+```{r}
+resumen <- data.frame("promedio" = mean(mujeres$height), 
+                      "desv" = sd(mujeres$height))
+resumen
+```
+
+```{r}
+resumen$promedio
+```
+```{r}
+head(murders)
+names(murders)
+summarize(murders, mean(rate), sd(rate))
+
+```
+
+La tasa de asesinatos de Estados Unidos es el número total de asesinatos en Estados Unidos dividido por la población total. Entonces el cálculo correcto es:
+
+```{r}
+us_murder_rate <- murders %>%
+  summarize(rate = sum(total)/ sum(population) * 100000)
+us_murder_rate
+```
+
+
+```{r}
+class(us_murder_rate)
+```
+
+
+```{r}
+summary(murders)
+```
+
+## Cómo agrupar y luego resumir con group_by
+Una operación común en la exploración de datos es dividir primero los datos en grupos y luego calcular resúmenes para cada grupo. 
+
+```{r}
+heights %>%
+  group_by(sex) %>%
+  summarize(average = mean(height), standard_deviation = sd(height))
+```
+```{r}
+median_min_max <- function(x){
+  qs <- quantile(x, c(0.5, 0, 1))
+  data.frame(median = qs[1], minimum = qs[2], maximum = qs[3])
+}
+
+murders %>%
+  group_by(region) %>%
+  summarize(median_min_max(rate))
+```
+## pull
+
+Aquí mostramos un truco útil para acceder a los valores almacenados en los datos cuando usamos pipes: cuando un objeto de datos se canaliza (is piped en inglés), ese objeto y sus columnas se pueden acceder usando la función pull.
+
+```{r}
+class(us_murder_rate)
+us_murder_rate %>% pull(rate)
+```
+
+```{r}
+pull(us_murder_rate)
+```
+
+
+## Cómo ordenar los data frames
+
+Para ordenar tablas enteras se puede usar la función arrange()
+
+```{r}
+arrange(murders, population)
+```
+
+
+El código en el libro es:
+
+```{r}
+murders %>% arrange(population)
+```
+
+Para ver los estados por tasa de asesinatos, desde menor a mayor, organizamos por el rate() y como extra filtramos los que sean menores a 0.7
+
+```{r}
+murders %>% arrange(rate) %>% filter(rate<0.7)
+```
+
+
+
+## ordenar anidadamente
+Si estamos ordenando una columna cuando hay empates, podemos usar una segunda columna para romper el empate. Del mismo modo, se puede usar una tercera columna para romper empates entre la primera y la segunda, y así sucesivamente. Aquí ordenamos por region y entonces, dentro de la región, ordenamos por tasa de asesinatos:
+
+```{r}
+murders %>% arrange(region, rate)
+```
+
+
+## Los primeros  n
+ 
+En el código anterior, usamos la función head para evitar que la página se llene con todo el set de datos. Si queremos ver una mayor proporción, podemos usar la función top_n. Esta función toma un data frame como primer argumento, el número de filas para mostrar en el segundo y la variable para filtrar en el tercero. Aquí hay un ejemplo de cómo ver las 5 filas superiores:
+
+
+
+```{r}
+murders %>% top_n(5, rate) %>% arrange(region)
+```
+
+```{r}
+top_n(murders, 5, rate)
+```
+## Ejercicios
+
+Para estos ejercicios, utilizaremos los datos de la encuesta recopilada por el Centro Nacional de Estadísticas de Salud de Estados Unidos (NCHS por sus siglas en inglés). Este centro ha realizado una serie de encuestas de salud y nutrición desde la década de 1960. A partir de 1999, alrededor de 5,000 individuos de todas las edades han sido entrevistados cada año y completan el componente de examen de salud de la encuesta. Parte de los datos está disponible a través del paquete NHANES. Una vez que instale el paquete NHANES, puede cargar los datos así:
+
+
+
+
+## Tibbles tbl
+
+```{r}
+as.tibble(murders)
+as.data.frame(murders)
+```
+
+
+# Los condicionales de tidyverse
+case_when: pero puede generar cualquier cantidad de valores, en lugar de solo TRUE o FALSE
+supongan que queremos comparar las tasas de asesinatos en cuatro grupos de estados: New England, West Coast, South y Other. Para cada estado, primero preguntamos si está en New England. Si la respuesta es no, entonces preguntamos si está en el West Coast, y si no, preguntamos si está en el South y, si no, entonces asignamos ninguna de las anteriores (Other). Aquí vemos como usamos case_when para hacer esto:
+
+```{r}
+murders %>%
+  mutate(group = case_when(
+    abb %in% c("ME", "NH", "VT", "MA", "RI", "CT") ~ "New England",
+    abb %in% c("WA", "OR", "CA") ~ "West Coast",
+    region == "South" ~ "South",
+    TRUE ~ "Other")) %>%
+  group_by(group) %>%
+  summarize(rate = sum(total)/ sum(population) * 10^5)
+```
+
+```{r}
+list.files()
+```
+
+
+## Introducción a la visualización de datos
+“una imagen vale más que mil palabras.” La visualización de datos ofrece una forma muy efectiva de comunicar hallazgos basados en datos. En algunos casos, la visualización es tan convincente que no requiere un análisis de seguimiento.
+
+
+Crearemos gráficos usando el paquete ggplot22: es generalmente más intuitiva para los principiantes es porque usa una gramática de gráficos27, el gg de ggplot2. al aprender una pequeña cantidad de los componentes básicos de ggplot2 y de su gramática, podrán crear cientos de gráficos diferentes. Está diseñado para trabajar exclusivamente con tablas de datos en formato tidy (donde las filas son observaciones y las columnas son variables).
+
+```{r}
+library(dplyr)
+library(ggplot2)
+```
+
+El primer paso para crear un gráfico ggplot2 es definir un objeto ggplot. Hacemos esto con la función ggplot, que inicializa el gráfico
+
+```{r}
+ggplot(data = murders)
+```
+
+También podemos pipe los datos como primer argumento. Entonces, esta línea de código es equivalente a la anterior:
+
+
+murders %>% ggplot()
+
+```{r}
+murders %>% ggplot() +
+  geom_point(aes(x = population/10^6, y = total))  +
+  geom_text(aes(population/10^6, total, label = abb))
+
+
+```
+
+```{r}
+p <- murders %>% ggplot(aes(population/10^6, total, label = abb))
+p + geom_point(size = 3) +
+  geom_text(nudge_x = 1.5)
+```
+
+
+
+
+Si es necesario, podemos anular el mapeo global definiendo un nuevo mapeo dentro de cada capa. Estas definiciones locales reemplazan a las globales. Aquí hay un ejemplo:
+
+```{r}
+p + geom_point(size = 3) +
+  geom_text(aes(x = 10, y = 800, label = "Hello there!"))
+```
+
+
+## Escalas
+función scale_x_continuous nos permite controlar el comportamiento de las escalas. La usamos así:
+
+## Títulos 
+xlab, ylab, ggtitle
+
+```{r}
+p + geom_point(size = 3) +
+  geom_text(nudge_x = 0.05) +
+  scale_x_continuous(trans = "log10") +
+  scale_y_continuous(trans = "log10") +
+  xlab("Populations in millions (log scale)") +
+  ylab("Total number of murders (log scale)") +
+  ggtitle("US Gun Murders in 2010")
+```
+
+
+```{r}
+p <- murders %>% ggplot(aes(population/10^6, total, label = abb)) +
+  geom_text(nudge_x = 0.05) +
+  scale_x_log10() +
+  scale_y_log10() +
+  xlab("Populations in millions (log scale)") +
+  ylab("Total number of murders (log scale)") +
+  ggtitle("US Gun Murders in 2010")
+```
+
+
+```{r}
+
+p + geom_point(aes(col=region), size = 3)
+```
+
+```{r}
+install.packages("HistData")
+library(tidyverse)
+library(HistData)
+data("GaltonFamilies")
+```
+
+```{r}
+head(GaltonFamilies)
+```
+
+```{r}
+p <- GaltonFamilies %>% ggplot(aes(father)) + geom_histogram(fill="blue") + xlab("Altura del padre") + ylab("Frecuencias") + ggtitle("Histograma de la altura del padre")
+
+print(p)
+```
+
+
+```{r}
+summary(GaltonFamilies)
+```
+```{r}
+boxplot(GaltonFamilies$father)
+```
+
+
+```{r}
+h <- GaltonFamilies %>% ggplot(aes(father)) + geom_boxplot(fill="pink")
+print(h)
+
+```
+```{r}
+GaltonFamilies %>% filter(gender== "male") %>% ggplot(aes(father, childHeight)) +
+  geom_point(alpha = 0.5) + geom_abline(intercept = 0, slope = 1, col = "blue") + geom_smooth(method = "lm")
+```
+
+La correlación r entre las alturas del padre y del hijo se calcula con la función "cor", no olvidar la función summarise:
+
+```{r}
+c <- GaltonFamilies %>% summarise(r= cor(father, childHeight)) %>% pull(r)
+c
+```
+```{r}
+fit <- lm(childHeight ~ father, data = GaltonFamilies)
+fit$coef
+
+```
+
+```{r}
+summary(fit)
+```
+
